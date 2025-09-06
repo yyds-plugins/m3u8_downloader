@@ -11,12 +11,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.embedding.engine.plugins.shim.ShimPluginRegistry;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.view.FlutterCallbackInformation;
 
 /**
@@ -28,8 +26,7 @@ public class FlutterBackgroundExecutor implements MethodChannel.MethodCallHandle
     public static final String SHARED_PREFERENCES_KEY = "vincent.m3u8.downloader.pref";
     public static final String CALLBACK_DISPATCHER_HANDLE_KEY = "callback_dispatcher_handle_key";
     private static final String TAG = "M3u8Downloader background";
-    @SuppressWarnings("deprecation")
-    private static PluginRegistry.PluginRegistrantCallback pluginRegistrantCallback;
+    // Removed deprecated PluginRegistrantCallback
     private MethodChannel backgroundChannel;
     private FlutterEngine backgroundFlutterEngine;
     private final AtomicBoolean isCallbackDispatcherReady = new AtomicBoolean(false);
@@ -72,10 +69,8 @@ public class FlutterBackgroundExecutor implements MethodChannel.MethodCallHandle
             return;
         }
         Log.i(TAG, "Starting Background isolate...");
-        @SuppressWarnings("deprecation")
-        String appBundlePath = io.flutter.view.FlutterMain.findAppBundlePath(context);
         AssetManager assets = context.getAssets();
-        if (appBundlePath != null && !isRunning()) {
+        if (!isRunning()) {
             backgroundFlutterEngine = new FlutterEngine(context);
             FlutterCallbackInformation flutterCallback = FlutterCallbackInformation.lookupCallbackInformation(callbackHandle);
             if (flutterCallback == null) {
@@ -84,13 +79,11 @@ public class FlutterBackgroundExecutor implements MethodChannel.MethodCallHandle
             }
             DartExecutor executor = backgroundFlutterEngine.getDartExecutor();
             initializeMethodChannel(executor);
-            DartExecutor.DartCallback dartCallback = new DartExecutor.DartCallback(assets, appBundlePath, flutterCallback);
+            DartExecutor.DartCallback dartCallback = new DartExecutor.DartCallback(assets, flutterCallback.callbackLibraryPath, flutterCallback);
 
             executor.executeDartCallback(dartCallback);
 
-            if (pluginRegistrantCallback != null) {
-                pluginRegistrantCallback.registerWith(new ShimPluginRegistry(backgroundFlutterEngine));
-            }
+            // Plugin registration is now handled automatically by Flutter
         }
     }
 

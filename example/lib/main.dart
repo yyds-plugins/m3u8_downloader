@@ -17,6 +17,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
+@pragma('vm:entry-point')
 class _MyAppState extends State<MyApp> {
   ReceivePort _port = ReceivePort();
   String? _downloadingUrl;
