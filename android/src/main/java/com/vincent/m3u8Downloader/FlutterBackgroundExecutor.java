@@ -11,10 +11,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+// Legacy PluginRegistry import removed; not used with embedding v2.
 import io.flutter.view.FlutterCallbackInformation;
 
 /**
@@ -26,7 +28,7 @@ public class FlutterBackgroundExecutor implements MethodChannel.MethodCallHandle
     public static final String SHARED_PREFERENCES_KEY = "vincent.m3u8.downloader.pref";
     public static final String CALLBACK_DISPATCHER_HANDLE_KEY = "callback_dispatcher_handle_key";
     private static final String TAG = "M3u8Downloader background";
-    // Removed deprecated PluginRegistrantCallback
+    // Legacy PluginRegistrantCallback removed.
     private MethodChannel backgroundChannel;
     private FlutterEngine backgroundFlutterEngine;
     private final AtomicBoolean isCallbackDispatcherReady = new AtomicBoolean(false);
@@ -69,8 +71,12 @@ public class FlutterBackgroundExecutor implements MethodChannel.MethodCallHandle
             return;
         }
         Log.i(TAG, "Starting Background isolate...");
+        FlutterLoader flutterLoader = new FlutterLoader();
+        flutterLoader.startInitialization(context);
+        flutterLoader.ensureInitializationComplete(context, null);
+        String appBundlePath = flutterLoader.findAppBundlePath();
         AssetManager assets = context.getAssets();
-        if (!isRunning()) {
+        if (appBundlePath != null && !isRunning()) {
             backgroundFlutterEngine = new FlutterEngine(context);
             FlutterCallbackInformation flutterCallback = FlutterCallbackInformation.lookupCallbackInformation(callbackHandle);
             if (flutterCallback == null) {
@@ -79,11 +85,13 @@ public class FlutterBackgroundExecutor implements MethodChannel.MethodCallHandle
             }
             DartExecutor executor = backgroundFlutterEngine.getDartExecutor();
             initializeMethodChannel(executor);
-            DartExecutor.DartCallback dartCallback = new DartExecutor.DartCallback(assets, flutterCallback.callbackLibraryPath, flutterCallback);
+            DartExecutor.DartCallback dartCallback = new DartExecutor.DartCallback(assets, appBundlePath, flutterCallback);
 
             executor.executeDartCallback(dartCallback);
 
-            // Plugin registration is now handled automatically by Flutter
+            // In embedding v2, plugins are automatically registered with the main engine.
+            // Background engine typically doesn't require manual plugin registration.
+            // If needed, use GeneratedPluginRegistrant.registerWith(backgroundFlutterEngine).
         }
     }
 

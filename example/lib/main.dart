@@ -17,7 +17,6 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-@pragma('vm:entry-point')
 class _MyAppState extends State<MyApp> {
   ReceivePort _port = ReceivePort();
   String? _downloadingUrl;
@@ -36,11 +35,18 @@ class _MyAppState extends State<MyApp> {
 
   void initAsync() async {
     String saveDir = await _findSavePath();
-    M3u8Downloader.initialize(onSelect: () async {
-      print('下载成功点击');
-      return null;
-    });
-    M3u8Downloader.config(saveDir: saveDir, threadCount: 2, convertMp4: true, debugMode: true);
+    M3u8Downloader.initialize(
+        onSelect: () async {
+          print('下载成功点击');
+          return null;
+        }
+    );
+    M3u8Downloader.config(
+      saveDir: saveDir,
+      threadCount: 2,
+      convertMp4: true,
+      debugMode: true
+    );
     // 注册监听器
     IsolateNameServer.registerPortWithName(_port.sendPort, 'downloader_send_port');
     _port.listen((dynamic data) {
@@ -60,8 +66,9 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<String> _findSavePath() async {
-    final directory =
-        Platform.isAndroid ? await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
+    final directory = Platform.isAndroid
+        ? await getExternalStorageDirectory()
+        : await getApplicationDocumentsDirectory();
     String saveDir = directory!.path + '/vPlayDownload';
     Directory root = Directory(saveDir);
     if (!root.existsSync()) {
@@ -79,15 +86,18 @@ class _MyAppState extends State<MyApp> {
       send.send(args);
     }
   }
-
   @pragma('vm:entry-point')
   static successCallback(dynamic args) {
     final SendPort? send = IsolateNameServer.lookupPortByName('downloader_send_port');
     if (send != null) {
-      send.send({"status": 2, "url": args["url"], "filePath": args["filePath"], "dir": args["dir"]});
+      send.send({
+        "status": 2,
+        "url": args["url"],
+        "filePath": args["filePath"],
+        "dir": args["dir"]
+      });
     }
   }
-
   @pragma('vm:entry-point')
   static errorCallback(dynamic args) {
     final SendPort? send = IsolateNameServer.lookupPortByName('downloader_send_port');
@@ -132,7 +142,8 @@ class _MyAppState extends State<MyApp> {
                             name: "下载未加密m3u8",
                             progressCallback: progressCallback,
                             successCallback: successCallback,
-                            errorCallback: errorCallback);
+                            errorCallback: errorCallback
+                        );
                       }
                     });
                   }),
@@ -161,7 +172,8 @@ class _MyAppState extends State<MyApp> {
                           name: "下载已加密m3u8",
                           progressCallback: progressCallback,
                           successCallback: successCallback,
-                          errorCallback: errorCallback);
+                          errorCallback: errorCallback
+                      );
                     }
                   });
                 },

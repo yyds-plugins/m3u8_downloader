@@ -22,7 +22,6 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
-    namespace 'com.vincent.m3u8Downloader'
     compileSdkVersion 30
 
     defaultConfig {

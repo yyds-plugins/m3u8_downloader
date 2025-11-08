@@ -111,11 +111,7 @@ public class NotificationUtil {
                 // 点击跳转
                 Intent intent = new Intent(context, getMainActivityClass(context));
                 intent.setAction(ACTION_SELECT_NOTIFICATION);
-                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    flags |= PendingIntent.FLAG_IMMUTABLE;
-                }
-                PendingIntent pendingIntent = PendingIntent.getActivity(context, NOTIFICATION_ID, intent, flags);
+                PendingIntent pendingIntent = PendingIntent.getActivity(context, NOTIFICATION_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT);
                 builder.setContentIntent(pendingIntent);
 
                 builder.setContentText("下载完成").setProgress(0, 0, false);
