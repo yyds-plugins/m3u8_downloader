@@ -47,6 +47,7 @@ class _MyAppState extends State<MyApp> {
       // 监听数据请求
       setState(() {
         _printData = '$data';
+        print("========>>>>>>>>>>=$data");
       });
     });
   }
