@@ -17,13 +17,14 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
+@pragma('vm:entry-point')
 class _MyAppState extends State<MyApp> {
   ReceivePort _port = ReceivePort();
   String? _downloadingUrl;
   String? _printData;
 
-  // 未加密的url地址（喜羊羊与灰太狼之决战次时代）
-  String url1 = "https://new.iskcd.com/20220420/XNihn9Om/index.m3u8";
+  // 未加密的 m3u8 测试地址（替换为有效的 m3u8 索引）
+  String url1 = "https://play.maoyanplay.top/20251025/0xh6Na8c/index.m3u8";
   // 加密的url地址（火影忍者疾风传）
   String url2 = "https://v3.dious.cc/20201116/SVGYv7Lo/index.m3u8";
 
@@ -35,18 +36,11 @@ class _MyAppState extends State<MyApp> {
 
   void initAsync() async {
     String saveDir = await _findSavePath();
-    M3u8Downloader.initialize(
-        onSelect: () async {
-          print('下载成功点击');
-          return null;
-        }
-    );
-    M3u8Downloader.config(
-      saveDir: saveDir,
-      threadCount: 2,
-      convertMp4: true,
-      debugMode: true
-    );
+    M3u8Downloader.initialize(onSelect: () async {
+      print('下载成功点击');
+      return null;
+    });
+    M3u8Downloader.config(saveDir: saveDir, threadCount: 2, convertMp4: true, debugMode: true);
     // 注册监听器
     IsolateNameServer.registerPortWithName(_port.sendPort, 'downloader_send_port');
     _port.listen((dynamic data) {
@@ -54,6 +48,16 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         _printData = '$data';
       });
+    });
+  }
+
+  bool _isM3u8Url(String url) {
+    return url.toLowerCase().endsWith(".m3u8");
+  }
+
+  void _showNotM3u8Tip(String url) {
+    setState(() {
+      _printData = "当前URL不是m3u8索引，已取消下载: $url";
     });
   }
 
@@ -66,9 +70,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<String> _findSavePath() async {
-    final directory = Platform.isAndroid
-        ? await getExternalStorageDirectory()
-        : await getApplicationDocumentsDirectory();
+    final directory =
+        Platform.isAndroid ? await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
     String saveDir = directory!.path + '/vPlayDownload';
     Directory root = Directory(saveDir);
     if (!root.existsSync()) {
@@ -86,18 +89,15 @@ class _MyAppState extends State<MyApp> {
       send.send(args);
     }
   }
+
   @pragma('vm:entry-point')
   static successCallback(dynamic args) {
     final SendPort? send = IsolateNameServer.lookupPortByName('downloader_send_port');
     if (send != null) {
-      send.send({
-        "status": 2,
-        "url": args["url"],
-        "filePath": args["filePath"],
-        "dir": args["dir"]
-      });
+      send.send({"status": 2, "url": args["url"], "filePath": args["filePath"], "dir": args["dir"]});
     }
   }
+
   @pragma('vm:entry-point')
   static errorCallback(dynamic args) {
     final SendPort? send = IsolateNameServer.lookupPortByName('downloader_send_port');
@@ -131,6 +131,10 @@ class _MyAppState extends State<MyApp> {
                     // 下载
                     _checkPermission().then((hasGranted) async {
                       if (hasGranted) {
+                        if (!_isM3u8Url(url1)) {
+                          _showNotM3u8Tip(url1);
+                          return;
+                        }
                         await M3u8Downloader.config(
                           convertMp4: false,
                         );
@@ -142,8 +146,7 @@ class _MyAppState extends State<MyApp> {
                             name: "下载未加密m3u8",
                             progressCallback: progressCallback,
                             successCallback: successCallback,
-                            errorCallback: errorCallback
-                        );
+                            errorCallback: errorCallback);
                       }
                     });
                   }),
@@ -161,6 +164,10 @@ class _MyAppState extends State<MyApp> {
                   // 下载
                   _checkPermission().then((hasGranted) async {
                     if (hasGranted) {
+                      if (!_isM3u8Url(url2)) {
+                        _showNotM3u8Tip(url2);
+                        return;
+                      }
                       await M3u8Downloader.config(
                         convertMp4: false,
                       );
@@ -172,8 +179,7 @@ class _MyAppState extends State<MyApp> {
                           name: "下载已加密m3u8",
                           progressCallback: progressCallback,
                           successCallback: successCallback,
-                          errorCallback: errorCallback
-                      );
+                          errorCallback: errorCallback);
                     }
                   });
                 },
